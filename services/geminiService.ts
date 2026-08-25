@@ -153,13 +153,13 @@ export const generateBlogPost = async (
   let contentTypeContext = '';
   if (params.contentType === 'review') {
     contentTypeContext = `
-      [글의 목적: 후기성 (Review / Case Study)]
-      - 고객의 실제 체험담, 비포/애프터, 만족도, 감동 포인트를 중심으로 서술하세요.
-      - 독자의 공감대를 형성하고 스토리텔링을 통해 자연스럽게 브랜드의 장점을 녹여내세요.
+      [글의 목적: 고객 후기 및 진행 사례 (Client Story & Case Study)]
+      - 본 블로그/채널의 운영자(브랜드 담당자) 시점에서, 우리 서비스를 이용하거나 프로젝트를 함께 진행한 고객의 실제 사연, 진행 과정, 만족도 및 감동 포인트를 생생하게 소개하는 글입니다.
+      - 고객이 느낀 감동과 가치를 브랜드의 전문성과 정성스러운 디렉팅/작업 과정과 연결하여 자연스럽고 신뢰감 있는 스토리텔링으로 풀어내세요.
     `;
   } else if (params.contentType === 'information') {
     contentTypeContext = `
-      [글의 목적: 정보성 (Information / Tip)]
+      [글의 목적: 정보성 (Knowledge & Expert Tips)]
       - 독자가 궁금해할 전문 지식, 산업 트렌드, 유용한 팁을 논리적이고 명확하게 전달하세요.
       - 브랜드의 전문성과 권위성(Expertise & Authority)을 강조하여 신뢰도를 높이는 데 집중하세요.
     `;

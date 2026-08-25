@@ -108,8 +108,8 @@ export const InputSection: React.FC<InputSectionProps> = ({
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
               {[
-                { id: 'review', label: '후기성 (리뷰/체험담)' },
-                { id: 'information', label: '정보성 (지식/팁)' }
+                { id: 'review', label: '고객 후기형 (사례/후기 소개)' },
+                { id: 'information', label: '정보성 (지식/정보 팁)' }
               ].map((type) => (
                 <button
                   key={type.id}
