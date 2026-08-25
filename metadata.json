@@ -1,0 +1,8 @@
+{
+  "name": "Hema Studio Content AI",
+  "description": "An AI-powered tool to generate multi-platform (Naver, Instagram, Threads, WordPress) SEO-optimized posts using real-time algorithm trends.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
