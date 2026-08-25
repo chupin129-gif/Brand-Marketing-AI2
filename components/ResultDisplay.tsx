@@ -13,14 +13,15 @@ interface ResultDisplayProps {
   params: BlogPostParams;
 }
 
-const platformConfig: Record<Platform, { label: string; icon: string; bgClass: string; textClass: string }> = {
-  naver: { label: '네이버 블로그', icon: 'N', bgClass: 'bg-naver', textClass: 'text-white' },
-  wordpress: { label: '워드프레스', icon: 'W', bgClass: 'bg-blue-600', textClass: 'text-white' },
-  tistory: { label: '티스토리', icon: 'T', bgClass: 'bg-orange-500', textClass: 'text-white' },
-  blogspot: { label: '블로그스팟', icon: 'B', bgClass: 'bg-orange-600', textClass: 'text-white' },
-  instagram: { label: '인스타그램', icon: 'IG', bgClass: 'bg-pink-500', textClass: 'text-white' },
-  threads: { label: '스레드', icon: '@', bgClass: 'bg-black', textClass: 'text-white' },
-  eoplanet: { label: '이오플래닛', icon: 'EO', bgClass: 'bg-blue-500', textClass: 'text-white' },
+const platformConfig: Record<Platform, { label: string; icon: string; bgClass: string; textClass: string; copyLabel: string; titleLabel: string }> = {
+  naver: { label: '네이버 블로그', icon: 'N', bgClass: 'bg-naver', textClass: 'text-white', copyLabel: '블로그 서식 그대로 복사', titleLabel: '추천 제목 3종 (Title Options)' },
+  wordpress: { label: '워드프레스', icon: 'W', bgClass: 'bg-blue-600', textClass: 'text-white', copyLabel: '블로그 서식 그대로 복사', titleLabel: '추천 제목 3종 (Title Options)' },
+  tistory: { label: '티스토리', icon: 'T', bgClass: 'bg-orange-500', textClass: 'text-white', copyLabel: '블로그 서식 그대로 복사', titleLabel: '추천 제목 3종 (Title Options)' },
+  blogspot: { label: '블로그스팟', icon: 'B', bgClass: 'bg-orange-600', textClass: 'text-white', copyLabel: '블로그 서식 그대로 복사', titleLabel: '추천 제목 3종 (Title Options)' },
+  instagram: { label: '인스타그램', icon: 'IG', bgClass: 'bg-pink-500', textClass: 'text-white', copyLabel: '인스타그램 본문 복사', titleLabel: '추천 카드뉴스 헤드라인 3종' },
+  threads: { label: '스레드', icon: '@', bgClass: 'bg-black', textClass: 'text-white', copyLabel: '스레드 본문 복사', titleLabel: '추천 훅(첫 문장) 3종' },
+  eoplanet: { label: '이오플래닛', icon: 'EO', bgClass: 'bg-blue-500', textClass: 'text-white', copyLabel: '아티클 서식 복사', titleLabel: '추천 아티클 제목 3종' },
+  x: { label: 'X (트위터)', icon: '𝕏', bgClass: 'bg-zinc-950 border border-slate-700', textClass: 'text-white', copyLabel: 'X 포스트/타래 복사', titleLabel: '추천 메인 트윗 훅 3종' },
 };
 
 export const ResultDisplay: React.FC<ResultDisplayProps> = ({ 
@@ -282,15 +283,17 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
             <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="bg-slate-900/60 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-2xl overflow-hidden">
               <div className="bg-slate-800/40 px-6 py-4 border-b border-slate-700/50 flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-slate-300 text-sm">추천 제목 3종 (Title Options)</span>
-                  <span className="text-[11px] bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full font-bold">최대 25~30자 권장</span>
+                  <span className="font-bold text-slate-300 text-sm">{platformConfig[activePlatform].titleLabel}</span>
+                  <span className="text-[11px] bg-slate-700 text-slate-300 px-2.5 py-1 rounded-full font-bold">
+                    {activePlatform === 'threads' || activePlatform === 'x' ? '피드 주목도 높은 훅 추천' : activePlatform === 'instagram' ? '카드뉴스 표지 헤드라인' : '최대 25~30자 권장'}
+                  </span>
                 </div>
               </div>
               <div className="p-0 divide-y divide-slate-700/50">
                 {[
-                  { id: 'standard', label: '검색 노출 최적화 (Standard)', value: currentData.titles.standard || '제목 생성 오류' },
-                  { id: 'emotional', label: '감성 자극형 (Emotional)', value: currentData.titles.emotional || '제목 생성 오류' },
-                  { id: 'clickbait', label: '호기심 유발형 (Click-bait)', value: currentData.titles.clickbait || '제목 생성 오류' },
+                  { id: 'standard', label: (activePlatform === 'threads' || activePlatform === 'x') ? '핵심 요약형 훅' : '검색 노출 최적화 (Standard)', value: currentData.titles.standard || '제목 생성 오류' },
+                  { id: 'emotional', label: (activePlatform === 'threads' || activePlatform === 'x') ? '공감/감성 유발형 훅' : '감성 자극형 (Emotional)', value: currentData.titles.emotional || '제목 생성 오류' },
+                  { id: 'clickbait', label: (activePlatform === 'threads' || activePlatform === 'x') ? '도파민/호기심 훅' : '호기심 유발형 (Click-bait)', value: currentData.titles.clickbait || '제목 생성 오류' },
                 ].map((item) => (
                   <div key={item.id} className="p-5 hover:bg-slate-800/50 transition-colors flex justify-between items-start group gap-4 relative overflow-hidden">
                     <div className="flex-1 relative z-10">
@@ -327,7 +330,7 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
                 className={`text-sm font-bold flex items-center gap-2 px-5 py-2 rounded-xl text-white shadow-lg transition-all hover:scale-105 active:scale-95 ${platformConfig[activePlatform].bgClass}`}
               >
                 {copiedField === 'content' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copiedField === 'content' ? '복사 완료!' : '블로그 서식 그대로 복사'}
+                {copiedField === 'content' ? '복사 완료!' : platformConfig[activePlatform].copyLabel}
               </button>
             </div>
             

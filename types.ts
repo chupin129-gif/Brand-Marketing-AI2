@@ -30,7 +30,7 @@ export interface GeneratedBlog {
   attachedAssets?: VideoAssets;
 }
 
-export type Platform = 'naver' | 'wordpress' | 'tistory' | 'blogspot' | 'instagram' | 'threads' | 'eoplanet';
+export type Platform = 'naver' | 'wordpress' | 'tistory' | 'blogspot' | 'instagram' | 'threads' | 'eoplanet' | 'x';
 
 export interface SeoTrend {
   summary: string;

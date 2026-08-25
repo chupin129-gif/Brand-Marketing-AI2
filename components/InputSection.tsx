@@ -10,7 +10,9 @@ const platformNames: Record<string, string> = {
   tistory: '티스토리',
   blogspot: '구글 블로거',
   instagram: '인스타그램',
-  threads: '스레드'
+  threads: '스레드',
+  eoplanet: '이오플래닛',
+  x: 'X (트위터)'
 };
 
 interface InputSectionProps {

@@ -51,6 +51,20 @@ const platformInfo: Record<string, { name: string; color: string; badgeBg: strin
     badgeBg: 'bg-purple-500/10 border-purple-500/30',
     badgeText: 'text-purple-400',
     iconColor: 'text-purple-400'
+  },
+  eoplanet: {
+    name: '이오플래닛(EO Planet)',
+    color: 'blue',
+    badgeBg: 'bg-blue-500/10 border-blue-500/30',
+    badgeText: 'text-blue-400',
+    iconColor: 'text-blue-400'
+  },
+  x: {
+    name: 'X (트위터)',
+    color: 'slate',
+    badgeBg: 'bg-slate-500/10 border-slate-500/30',
+    badgeText: 'text-slate-200',
+    iconColor: 'text-slate-200'
   }
 };
 

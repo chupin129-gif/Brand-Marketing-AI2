@@ -14,7 +14,8 @@ const platformNames: Record<Platform, string> = {
   blogspot: '구글 블로거',
   instagram: '인스타그램',
   threads: '스레드',
-  eoplanet: '이오플래닛'
+  eoplanet: '이오플래닛',
+  x: 'X (트위터)'
 };
 
 const platformSubtext: Record<Platform, string> = {
@@ -24,7 +25,8 @@ const platformSubtext: Record<Platform, string> = {
   blogspot: '구글 검색 봇 색인(Indexing) 및 검색 노출 가이드라인 분석 중',
   instagram: '인스타그램 탐색탭 도달 및 릴스/캐러셀 최적화 로직 분석 중',
   threads: '스레드 추천 피드 노출 및 바이럴 참여형 알고리즘 분석 중',
-  eoplanet: '스타트업 IT 메이커 맞춤형 스토리텔링 및 공감대 노출 트렌드 분석 중'
+  eoplanet: '스타트업 IT 메이커 맞춤형 스토리텔링 및 공감대 노출 트렌드 분석 중',
+  x: 'X 알고리즘 맞춤 북마크/리포스트(RT) 유도 훅 및 타래(Thread) 구조 분석 중'
 };
 
 const App: React.FC = () => {
