@@ -6,6 +6,8 @@ export interface BlogPostParams {
   contentType: ContentType;
   mainKeyword: string;
   subKeywords: string;
+  musicTitle?: string;
+  musicDescription?: string;
   stories: { priority: number; content: string }[];
   videoAssets?: VideoAssets;
 }

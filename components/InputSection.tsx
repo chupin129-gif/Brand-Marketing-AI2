@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { BlogPostParams, Brand, ContentType } from '../types';
-import { Edit3, Hash, Video, FileText, Sparkles, X, Zap, Target, BookOpen } from 'lucide-react';
+import { Edit3, Hash, Video, FileText, Sparkles, X, Zap, Target, BookOpen, Music } from 'lucide-react';
 import { motion } from 'motion/react';
 import { processVideoFile } from '../utils/videoUtils';
 
@@ -220,6 +220,35 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
           )}
         </div>
+
+        {/* Music Information (Hema Review Only) */}
+        {params.brand === 'hema' && params.contentType === 'review' && (
+          <div className="space-y-3 pt-2 pb-2 border-y border-white/5">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-slate-200 flex items-center gap-1">
+                <Music className="w-4 h-4 text-slate-400" /> 사용된 음악 / 곡 제목
+              </label>
+              <input
+                type="text"
+                placeholder="예: 폴킴 - 모든 날, 모든 순간"
+                value={params.musicTitle || ''}
+                onChange={(e) => onChange('musicTitle', e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner text-sm"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-semibold text-slate-200 flex items-center gap-1">
+                <Music className="w-4 h-4 text-slate-400" /> 음악/곡에 대한 설명 또는 사연
+              </label>
+              <textarea
+                placeholder="이 곡을 선택한 이유나 특별한 사연을 적어주세요."
+                value={params.musicDescription || ''}
+                onChange={(e) => onChange('musicDescription', e.target.value)}
+                className="w-full h-20 px-4 py-2.5 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner resize-none text-sm"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Draft/Notes / Stories */}
         <div className="space-y-2">

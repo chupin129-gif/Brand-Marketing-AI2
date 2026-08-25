@@ -96,6 +96,7 @@ export const generateBlogPost = async (
         * 본문 전개: 
           - 단락이 바뀔 때 [소제목 🎤] (양옆에 이모지 포함) 형식으로 구분.
           - 글 중간중간 [🎬 영상 GIF], [📸 고객 녹음 부스 사진], [📸 메이킹 촬영 사진] 등 사진 삽입 위치를 텍스트 흐름에 맞게 디테일하게 마커로 표시.
+          - 후기성 글인 경우, 고객이 사용한 [음악/곡 제목]과 [음악 설명/사연]이 주어지면 이를 단순히 나열하지 말고 "고객님이 선택하신 이 곡은 ~한 의미가 있죠", "직접 부르신 [곡명]이 스튜디오에 울려 퍼질 때 너무 감동이었어요" 등 감성적인 스토리텔링의 핵심 요소로 자연스럽게 녹여내세요.
         * 하단 CTA (고정 템플릿 - 반드시 글 맨 끝에 아래 양식을 토씨 하나 틀리지 않고 똑같이 출력할 것):
           
           [📍 지도: 헤마스튜디오]
@@ -382,6 +383,8 @@ export const generateBlogPost = async (
     - Platform: ${platform}
     - Main Keyword: ${params.mainKeyword}
     - Sub Keywords: ${params.subKeywords}
+    ${params.brand === 'hema' && params.contentType === 'review' && params.musicTitle ? `- Used Music/Song: ${params.musicTitle}` : ''}
+    ${params.brand === 'hema' && params.contentType === 'review' && params.musicDescription ? `- Music Description/Story: ${params.musicDescription}` : ''}
     - Customer Stories / Priority Notes:
 ${params.stories.map(s => `      [${s.priority}순위 강조 내용]: ${s.content}`).join('\n')}
     * ⚠️ IMPORTANT: 반영 지침: 위 순위는 고객이 원하는 글의 비중과 순서입니다. 1순위 내용을 가장 중심적이고 비중 있게 다루고, 2순위~5순위 내용도 빠짐없이 글의 흐름에 맞게 순차적으로 골고루 반영해 주세요.
