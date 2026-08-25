@@ -386,7 +386,7 @@ export const generateBlogPost = async (
     ${params.brand === 'hema' && params.contentType === 'review' && params.musicTitle ? `- Used Music/Song: ${params.musicTitle}` : ''}
     ${params.brand === 'hema' && params.contentType === 'review' && params.musicDescription ? `- Music Description/Story: ${params.musicDescription}` : ''}
     - Customer Stories / Priority Notes:
-${params.stories.map(s => `      [${s.priority}순위 강조 내용]: ${s.content}`).join('\n')}
+    ${(params.stories || []).map(s => `      [${s.priority}순위 강조 내용]: ${s.content}`).join('\n')}
     * ⚠️ IMPORTANT: 반영 지침: 위 순위는 고객이 원하는 글의 비중과 순서입니다. 1순위 내용을 가장 중심적이고 비중 있게 다루고, 2순위~5순위 내용도 빠짐없이 글의 흐름에 맞게 순차적으로 골고루 반영해 주세요.
     ${hasVideo ? '- **Video Context**: Video frames are attached. Describe these visuals authentically in the text.' : ''}
 
@@ -454,12 +454,20 @@ ${params.stories.map(s => `      [${s.priority}순위 강조 내용]: ${s.conten
       },
     });
 
-    const result = JSON.parse(response.text || "{}");
+    let responseText = response.text || "{}";
+    const jsonMatch = responseText.match(/```(?:json)?\n([\s\S]*?)\n```/);
+    if (jsonMatch) {
+      responseText = jsonMatch[1];
+    } else {
+      responseText = responseText.replace(/^```json\s*/, '').replace(/```\s*$/, '').trim();
+    }
+    
+    const result = JSON.parse(responseText);
     result.attachedAssets = params.videoAssets;
     
     return result as GeneratedBlog;
   } catch (error) {
     console.error("Error generating blog post:", error);
-    throw new Error("Failed to generate blog post.");
+    throw new Error("Failed to generate blog post: " + (error instanceof Error ? error.message : JSON.stringify(error)));
   }
 };
