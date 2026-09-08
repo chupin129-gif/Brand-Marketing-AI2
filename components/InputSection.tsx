@@ -1,8 +1,9 @@
 import React, { useRef } from 'react';
-import { BlogPostParams, Brand, ContentType } from '../types';
-import { Edit3, Hash, Video, FileText, Sparkles, X, Zap, Target, BookOpen, Music } from 'lucide-react';
+import { BlogPostParams, Brand, ContentType, Platform } from '../types';
+import { Edit3, Hash, Video, FileText, Sparkles, X, Zap, Target, BookOpen, Music, Link as LinkIcon, Plus } from 'lucide-react';
 import { motion } from 'motion/react';
 import { processVideoFile } from '../utils/videoUtils';
+import { KeywordTrendAnalyzer } from './KeywordTrendAnalyzer';
 
 const platformNames: Record<string, string> = {
   naver: '네이버 블로그',
@@ -138,17 +139,31 @@ export const InputSection: React.FC<InputSectionProps> = ({
       </div>
 
       <div className="p-6 space-y-6 flex-1">
-        {/* Main Keyword */}
-        <div className="space-y-2">
-          <label className="block text-sm font-semibold text-slate-200 flex items-center gap-1">
-            <Hash className="w-4 h-4 text-indigo-400" /> 메인 키워드 (필수)
-          </label>
-          <input
-            type="text"
-            value={params.mainKeyword}
-            onChange={(e) => onChange('mainKeyword', e.target.value)}
-            className="w-full px-4 py-3 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner"
-          />
+        {/* Main Keyword & Trend Analyzer */}
+        <div className="space-y-3">
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-200 flex items-center gap-1">
+              <Hash className="w-4 h-4 text-indigo-400" /> 메인 키워드 (필수)
+            </label>
+            <input
+              type="text"
+              value={params.mainKeyword}
+              onChange={(e) => onChange('mainKeyword', e.target.value)}
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner"
+            />
+          </div>
+
+          {params.contentType === 'information' && (
+            <KeywordTrendAnalyzer
+              mainKeyword={params.mainKeyword}
+              activePlatform={activePlatform as Platform}
+              onApplyTrend={(main, sub, trend) => {
+                onChange('mainKeyword', main);
+                onChange('subKeywords', sub);
+                onChange('trendTopic', trend);
+              }}
+            />
+          )}
         </div>
 
         {/* Sub Keywords */}
@@ -163,6 +178,22 @@ export const InputSection: React.FC<InputSectionProps> = ({
             className="w-full px-4 py-3 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner"
           />
         </div>
+
+        {/* Trend Topic Field (Visible if information type) */}
+        {params.contentType === 'information' && (
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-200 flex items-center gap-1">
+              <Target className="w-4 h-4 text-emerald-400" /> 트렌드 테마
+            </label>
+            <input
+              type="text"
+              value={params.trendTopic || ''}
+              onChange={(e) => onChange('trendTopic', e.target.value)}
+              placeholder="예: 장마철 실내 데이트, 연말 모임"
+              className="w-full px-4 py-3 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner"
+            />
+          </div>
+        )}
 
         {/* Video Upload */}
         <div className="space-y-2">
@@ -252,27 +283,77 @@ export const InputSection: React.FC<InputSectionProps> = ({
           </div>
         )}
 
+        {/* Reference Links */}
+        <div className="space-y-2">
+          <label className="text-sm font-semibold text-slate-200 flex items-start sm:items-center gap-1 leading-snug">
+            <LinkIcon className="w-4 h-4 text-slate-400 shrink-0 mt-0.5 sm:mt-0" /> <span className="break-keep">참고용 레퍼런스 링크 (최대 5개)</span>
+          </label>
+          <p className="text-xs text-slate-400 mt-1 mb-2">
+            AI가 해당 링크들의 말투, 분량, 서식(H1, H2), 이모티콘 활용 빈도를 분석하여 유사하게 작성합니다.
+          </p>
+          <div className="space-y-2">
+            {(params.referenceLinks || []).map((link, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="url"
+                  value={link}
+                  onChange={(e) => {
+                    const newLinks = [...(params.referenceLinks || [])];
+                    newLinks[index] = e.target.value;
+                    onChange('referenceLinks', newLinks);
+                  }}
+                  placeholder="https://..."
+                  className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner text-sm leading-relaxed"
+                />
+                <button
+                  onClick={() => {
+                    const newLinks = (params.referenceLinks || []).filter((_, i) => i !== index);
+                    onChange('referenceLinks', newLinks);
+                  }}
+                  className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ))}
+            {(params.referenceLinks || []).length < 5 && (
+              <button
+                onClick={() => {
+                  const newLinks = [...(params.referenceLinks || []), ''];
+                  onChange('referenceLinks', newLinks);
+                }}
+                className="flex items-center justify-center gap-1 w-full py-2 border border-dashed border-slate-700 rounded-xl text-slate-400 hover:text-indigo-400 hover:border-indigo-500 hover:bg-indigo-500/5 transition-colors text-sm"
+              >
+                <Plus className="w-4 h-4" /> 링크 추가하기
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Draft/Notes / Stories */}
         <div className="space-y-2">
           <div className="flex flex-col gap-1.5 mb-2">
-            <label className="text-sm font-semibold text-slate-200 flex items-center gap-1">
-              <FileText className="w-4 h-4 text-slate-400" /> 고객 사연 / 촬영 현장 내용 (우선순위 1~5)
+            <label className="text-sm font-semibold text-slate-200 flex items-start sm:items-center gap-1 leading-snug">
+              <FileText className="w-4 h-4 text-slate-400 shrink-0 mt-0.5 sm:mt-0" /> <span className="break-keep">고객 사연 / 촬영 현장 내용 (우선순위 1~5)</span>
             </label>
             <div className="self-start">
-              <span className="text-[10px] bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-2 py-0.5 rounded flex items-center font-bold">
-                <Sparkles className="w-3 h-3 mr-1" /> 
-                {params.brand === 'hema' && 'hemastudio.com'}
-                {params.brand === 'samsong' && 'samsongenm.com'}
-                {params.brand === 'tmc' && 'TMC-7 치약 상세정보'}
-                {params.brand === 'makemysong' && 'makemysong.com'} 자동 연동됨
+              <span className="text-[10px] bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-2 py-1 rounded inline-flex items-center gap-1 font-bold">
+                <Sparkles className="w-3 h-3 shrink-0" /> 
+                <span className="leading-tight break-all sm:break-normal">
+                  {params.brand === 'hema' && 'hemastudio.com '}
+                  {params.brand === 'samsong' && 'samsongenm.com '}
+                  {params.brand === 'tmc' && 'TMC-7 치약 상세정보 '}
+                  {params.brand === 'makemysong' && 'makemysong.com '} 
+                  자동 연동됨
+                </span>
               </span>
             </div>
           </div>
           <div className="space-y-3">
             {params.stories.map((story, index) => (
               <div key={index} className="flex gap-2 items-start">
-                <div className="flex flex-col items-center gap-1 mt-2">
-                  <span className="text-xs font-bold text-slate-400">{story.priority}순위</span>
+                <div className="flex flex-col items-center justify-center shrink-0 w-10 mt-2.5">
+                  <span className="text-[11px] font-bold text-slate-400 bg-slate-800 px-1.5 py-0.5 rounded-md">{story.priority}순위</span>
                 </div>
                 <textarea
                   value={story.content}
@@ -282,7 +363,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     onChange('stories', newStories);
                   }}
                   placeholder={`${story.priority}순위로 강조하고 싶은 내용을 입력하세요.`}
-                  className="w-full h-20 px-4 py-2 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner resize-none text-sm"
+                  className="w-full h-20 px-3 py-2 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner resize-none text-sm leading-relaxed"
                 />
                 {params.stories.length > 1 && (
                   <button
@@ -292,7 +373,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                       newStories.forEach((s, i) => s.priority = i + 1);
                       onChange('stories', newStories);
                     }}
-                    className="p-2 mt-1 text-slate-500 hover:text-red-400 transition-colors"
+                    className="p-1.5 mt-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors shrink-0"
                   >
                     <X className="w-4 h-4" />
                   </button>

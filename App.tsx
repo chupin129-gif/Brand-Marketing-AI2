@@ -54,11 +54,13 @@ const App: React.FC = () => {
       mainKeyword: '',
       subKeywords: '',
       stories: [{ priority: 1, content: '' }],
+      referenceLinks: [],
     };
   });
   const [generatedData, setGeneratedData] = useState<Partial<Record<Platform, GeneratedBlog>>>({});
   const [seoTrends, setSeoTrends] = useState<Partial<Record<Platform, SeoTrend>>>({});
   const [activePlatform, setActivePlatform] = useState<Platform>('naver');
+  const [isGeneratingImages, setIsGeneratingImages] = useState(false);
 
   // Auto-save params
   useEffect(() => {
@@ -163,6 +165,31 @@ const App: React.FC = () => {
 
   const handleGenerateForPlatform = async (platform: Platform) => {
     await handleSubmit(platform);
+  };
+
+  const handleGenerateImages = async (platform: Platform) => {
+    const blogData = generatedData[platform];
+    if (!blogData) return;
+    
+    try {
+      setIsGeneratingImages(true);
+      const { generateInfographics } = await import('./services/geminiService');
+      const { thumbnailUrl, infographicUrl } = await generateInfographics(blogData.titles.standard, blogData.content, platform);
+      
+      setGeneratedData(prev => ({
+        ...prev,
+        [platform]: {
+          ...prev[platform]!,
+          thumbnailUrl,
+          infographicUrl
+        }
+      }));
+    } catch (error: any) {
+      console.error(error);
+      alert('이미지 생성 중 오류가 발생했습니다: ' + (error?.message || '알 수 없는 오류'));
+    } finally {
+      setIsGeneratingImages(false);
+    }
   };
 
   // Initial load effect
@@ -316,7 +343,9 @@ const App: React.FC = () => {
                     activePlatform={activePlatform}
                     setActivePlatform={handlePlatformChange}
                     onGeneratePlatform={handleGenerateForPlatform}
+                    onGenerateImages={handleGenerateImages}
                     status={status} 
+                    isGeneratingImages={isGeneratingImages}
                     params={params}
                   />
                 </motion.div>

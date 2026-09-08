@@ -9,7 +9,9 @@ interface ResultDisplayProps {
   activePlatform: Platform;
   setActivePlatform: (p: Platform) => void;
   onGeneratePlatform: (p: Platform) => void;
+  onGenerateImages: (p: Platform) => void;
   status: AppStatus;
+  isGeneratingImages?: boolean;
   params: BlogPostParams;
 }
 
@@ -29,6 +31,8 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
   activePlatform, 
   setActivePlatform,
   onGeneratePlatform,
+  onGenerateImages,
+  isGeneratingImages,
   status,
   params
 }) => {
@@ -451,6 +455,54 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
                 </span>
               ))}
             </div>
+          </motion.div>
+          {/* Image Generation Section */}
+          <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }} className="bg-slate-900/60 backdrop-blur-md rounded-3xl border border-slate-700/50 shadow-2xl p-7 relative overflow-hidden mt-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div>
+                <span className="font-extrabold text-white text-sm flex items-center gap-2 mb-2">
+                  <ImageIcon className="w-4 h-4 text-emerald-400" />
+                  AI 썸네일 & 인포그래픽 자동 생성
+                </span>
+                <p className="text-xs text-slate-400 max-w-lg">
+                  생성된 원고의 제목과 본문 내용을 바탕으로 Gemini (Nano Banana) 이미지 엔진이 글에 완벽하게 어울리는 맞춤형 썸네일과 본문 첨부용 인포그래픽 이미지를 2장 생성합니다.
+                </p>
+              </div>
+              <button
+                onClick={() => onGenerateImages(activePlatform)}
+                disabled={isGeneratingImages}
+                className="w-full md:w-auto px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 shrink-0"
+              >
+                {isGeneratingImages ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                {currentData.thumbnailUrl ? '이미지 다시 생성하기' : '이미지 생성하기'}
+              </button>
+            </div>
+
+            {/* Display Generated Images */}
+            {(currentData.thumbnailUrl || currentData.infographicUrl) && (
+              <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-slate-700/50 pt-8">
+                {currentData.thumbnailUrl && (
+                  <div className="space-y-3">
+                    <span className="text-sm font-bold text-slate-300 bg-slate-800 px-3 py-1 rounded-lg">대표 썸네일 (1:1)</span>
+                    <div className="rounded-2xl overflow-hidden border border-slate-700 shadow-xl">
+                      <img src={currentData.thumbnailUrl} alt="Generated Thumbnail" className="w-full h-auto" />
+                    </div>
+                  </div>
+                )}
+                {currentData.infographicUrl && (
+                  <div className="space-y-3">
+                    <span className="text-sm font-bold text-slate-300 bg-slate-800 px-3 py-1 rounded-lg">본문 첨부용 인포그래픽 (3:4)</span>
+                    <div className="rounded-2xl overflow-hidden border border-slate-700 shadow-xl">
+                      <img src={currentData.infographicUrl} alt="Generated Infographic" className="w-full h-auto" />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </motion.div>
         </motion.div>
       )}

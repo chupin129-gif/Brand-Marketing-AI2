@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { BlogPostParams, GeneratedBlog, SeoTrend, Platform } from "../types";
+import { BlogPostParams, GeneratedBlog, SeoTrend, Platform, KeywordTrendAnalysis } from "../types";
 
 function getAIClient(): GoogleGenAI {
   const apiKey = 
@@ -80,6 +80,61 @@ export const fetchLatestSeoTrends = async (oldTrend?: SeoTrend, platform: Platfo
     sources: data.sources,
     timestamp: new Date().toLocaleString(),
   };
+};
+
+/**
+ * Step 1.5: Analyze keyword trends based on mainKeyword.
+ */
+export const analyzeKeywordTrends = async (
+  mainKeyword: string,
+  platform: Platform = 'naver'
+): Promise<KeywordTrendAnalysis> => {
+  const model = 'gemini-3.7-flash';
+  const ai = getAIClient();
+  const currentMonth = new Date().getMonth() + 1;
+  const currentSeason = [12, 1, 2].includes(currentMonth) ? '겨울' : [3, 4, 5].includes(currentMonth) ? '봄' : [6, 7, 8].includes(currentMonth) ? '여름' : '가을';
+
+  const systemInstruction = `
+    당신은 네이버 검색 노출(SEO) 및 실시간 트렌드 분석 전문가입니다.
+    사용자가 입력한 '메인 키워드'를 기반으로, 실제 네이버 검색 유저들이 많이 찾는 '자동완성 검색어'와 '연관 검색어'를 유추하고,
+    현재 시기(${currentMonth}월, ${currentSeason})에 맞는 라이프스타일/시즌 트렌드를 결합하여 
+    정보성 블로그 글에서 조회수를 폭발시킬 수 있는 황금 결합 키워드 세트를 3가지 제안해주세요.
+
+    다음 JSON 스키마를 엄격히 준수하여 응답하세요:
+    {
+      "autocompleteKeywords": ["키워드1", "키워드2", "키워드3"],
+      "relatedKeywords": ["키워드1", "키워드2", "키워드3"],
+      "seasonalTrends": [
+        { "tag": "이슈태그(예: 장마철)", "context": "트렌드 문맥 설명" }
+      ],
+      "recommendedCombinations": [
+        {
+          "titleIdea": "제목 아이디어 (예: 장마철에도 문제 없는 셀프축가 하기 좋은 스튜디오 추천!)",
+          "mainKeyword": "메인키워드",
+          "subKeywords": "서브키워드1, 서브키워드2",
+          "trendTopic": "장마철 실내 데이트",
+          "reason": "이 조합이 왜 클릭률을 높이는지 설명"
+        }
+      ]
+    }
+  `;
+
+  const response = await ai.models.generateContent({
+    model,
+    contents: `메인 키워드: ${mainKeyword}\n타겟 플랫폼: ${platform}\n\n이 키워드에 대한 트렌드 분석 및 황금 키워드 조합 3가지를 제안해줘.`,
+    config: {
+      systemInstruction,
+      responseMimeType: "application/json",
+      temperature: 0.7,
+    }
+  });
+
+  const text = response.text;
+  if (!text) {
+    throw new Error('트렌드 분석 결과를 가져올 수 없습니다.');
+  }
+
+  return JSON.parse(text) as KeywordTrendAnalysis;
 };
 
 /**
@@ -264,6 +319,26 @@ export const generateBlogPost = async (
     `;
   }
 
+  // --- REFERENCE STYLE CLONING CONTEXT ---
+  let referenceCloningContext = '';
+  if (params.referenceLinks && params.referenceLinks.length > 0) {
+    const validLinks = params.referenceLinks.filter(link => link.trim() !== '');
+    if (validLinks.length > 0) {
+      referenceCloningContext = `
+      ### 🎯 REFERENCE STYLE CLONING (CRITICAL MANDATE)
+      - The user has explicitly provided the following reference URLs:
+        ${validLinks.map(link => `- ${link}`).join('\n        ')}
+      - **ACTION REQUIRED**: You MUST use your Google Search capability to access and thoroughly analyze the content at these URLs.
+      - **MIMIC THE FOLLOWING ELEMENTS EXACTLY** from the provided references:
+        1. **Tone and Voice (말투)**: Is it highly formal, casual, enthusiastic, or deeply professional? Adopt the exact same tone.
+        2. **Length and Density (분량)**: Match the overall length, paragraph depth, and level of detail.
+        3. **Document Structure (서식/구성)**: Replicate their exact use of Headings (H1, H2, H3), bullet points, and numbering systems.
+        4. **Emoticon & Formatting Frequency (이모티콘 및 꾸밈 요소)**: If they use a lot of specific emojis or bold text, you must match that frequency and style. If they use none, you must use none.
+      - Your generated output should feel like it was written by the exact same author who wrote the reference articles, while seamlessly integrating our target brand's message.
+      `;
+    }
+  }
+
   let systemInstruction = '';
   
   if (platform === 'naver') {
@@ -273,6 +348,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${referenceCloningContext}
       
       ### KNOWLEDGE INTEGRATION & LIVE SEARCH (MANDATORY)
       - **CRITICAL**: The user has provided official homepage and shopping mall URLs for these brands. You MUST use the Google Search tool to directly navigate to and read the most up-to-date information from these specific URLs before writing.
@@ -321,6 +397,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${referenceCloningContext}
       
       ### TISTORY SEO & ALGORITHM GUIDELINES
       1. **Tone & Style**:
@@ -347,6 +424,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${referenceCloningContext}
       
       ### WORDPRESS / GOOGLE SEO GUIDELINES
       1. **Tone & Authority**:
@@ -373,6 +451,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${referenceCloningContext}
       
       ### BLOGSPOT SEO GUIDELINES
       1. **Search Intent & Readability**:
@@ -392,6 +471,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${referenceCloningContext}
       
       ### 📸 INSTAGRAM CONTENT ARCHITECTURE & GUIDELINES
       1. **본문 포맷 구성 (반드시 3단 분리 구조로 작성)**:
@@ -422,6 +502,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${referenceCloningContext}
       
       ### 🔥 THREADS PLATFORM GUIDELINES & VIRAL RULES
       1. **어조 (Tone & Voice) - 필수: 자연스러운 반말체/독백체**:
@@ -450,6 +531,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${referenceCloningContext}
       
       ### EO PLANET SEO & ALGORITHM GUIDELINES
       1. **Tone & Style**:
@@ -478,6 +560,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${referenceCloningContext}
       
       ### 𝕏 X (TWITTER) PLATFORM ALGORITHM & VIRAL RULES
       1. **어조 (Tone & Voice) - 필수: 강렬하고 간결한 반말 단문체**:
@@ -534,6 +617,7 @@ export const generateBlogPost = async (
     - Platform: ${platform}
     - Main Keyword: ${params.mainKeyword}
     - Sub Keywords: ${params.subKeywords}
+    ${params.trendTopic ? `- 🎯 Keyword Trend / Topic Context: ${params.trendTopic}` : ''}
     ${params.brand === 'hema' && params.contentType === 'review' && params.musicTitle ? `- Used Music/Song: ${params.musicTitle}` : ''}
     ${params.brand === 'hema' && params.contentType === 'review' && params.musicDescription ? `- Music Description/Story: ${params.musicDescription}` : ''}
     - Customer Stories / Priority Notes:
@@ -622,3 +706,123 @@ export const generateBlogPost = async (
     throw new Error("Failed to generate blog post: " + (error instanceof Error ? error.message : JSON.stringify(error)));
   }
 };
+
+export const generateInfographics = async (
+  title: string,
+  content: string,
+  platform: Platform
+): Promise<{ thumbnailUrl: string; infographicUrl: string }> => {
+  const ai = getAIClient();
+
+  try {
+    let thumbnailPrompt = '';
+    let infographicPrompt = '';
+    let thumbnailRatio = "1:1";
+    let infographicRatio = "3:4";
+
+    // 플랫폼별 썸네일 및 이미지 가이드라인 분기처리
+    if (['naver', 'tistory', 'blogspot', 'wordpress'].includes(platform)) {
+      // 블로그 계열 (Naver, Tistory, Blogspot, WordPress)
+      thumbnailRatio = "1:1";
+      infographicRatio = "3:4";
+      thumbnailPrompt = `Create a highly engaging, professional blog thumbnail image (1:1 ratio) suitable for ${platform}. 
+CRITICAL RULE 1: DO NOT write the entire long title. Instead, extract a SHORT, catchy Korean marketing hook (2-4 words maximum) based on this topic: "${title}".
+CRITICAL RULE 2: Render this short Korean text prominently and beautifully in the image.
+The design must be bold, clean, and use highly readable typography. It should look like a premium blog cover image. Use vibrant but professional colors. Ensure the Korean text is perfectly legible and not distorted.`;
+      
+      infographicPrompt = `Create a detailed, vertical infographic (3:4 ratio) summarizing the key points of this blog post.
+CRITICAL RULE 1: Extract ONLY 2-3 short, factual Korean keywords from this content: "${content.substring(0, 300)}...".
+CRITICAL RULE 2: ABSOLUTELY NO HALLUCINATIONS. DO NOT invent fake phone numbers, fake URLs, or fake statistics. Only use visual metaphors, charts, and the 2-3 short keywords.
+The style should be a professional data-visualization or step-by-step infographic. Use clear icons, segmented sections, and a consistent color palette with perfect Korean text rendering. DO NOT clutter with too much text.`;
+
+    } else if (platform === 'instagram') {
+      // 인스타그램
+      thumbnailRatio = "1:1";
+      infographicRatio = "1:1";
+      thumbnailPrompt = `Create a viral Instagram Carousel cover slide (1:1 ratio).
+CRITICAL RULE 1: DO NOT write the entire title. Write a massive, click-baity, SHORT Korean hook (1-3 words max) based on this topic: "${title}".
+CRITICAL RULE 2: Render this short Korean text accurately in the center.
+The design MUST have massive, bold Korean typography centered on the image. It should look like a highly aesthetic, trendy Instagram information/card-news cover. Minimalist but visually striking.`;
+      
+      infographicPrompt = `Create an Instagram Carousel content slide (1:1 ratio) containing key information.
+CRITICAL RULE 1: Extract 1-2 punchy Korean keywords summarizing this content: "${content.substring(0, 300)}...".
+CRITICAL RULE 2: ABSOLUTELY NO FAKE INFO. Do not write fake phone numbers or emails.
+The style should be a clean, aesthetic Instagram card-news slide. Large readable Korean text, modern icons, and plenty of negative space. DO NOT clutter it. Make it minimalist.`;
+
+    } else if (platform === 'threads' || platform === 'x') {
+      // 스레드, X (트위터)
+      thumbnailRatio = "16:9";
+      infographicRatio = "16:9";
+      thumbnailPrompt = `Create a highly engaging, shareable social media attachment image (16:9 ratio) for a post.
+CRITICAL RULE 1: Write a very short, intriguing Korean statement or keyword (1-2 words) based on: "${title}". DO NOT write the whole title.
+CRITICAL RULE 2: Render this short Korean text accurately.
+Make it visually arresting—like a bold statement card. The Korean typography should be the absolute focus, making people stop scrolling. Keep other elements minimal.`;
+      
+      infographicPrompt = `Create a quick-glance cheat-sheet or highly simplified chart (16:9 ratio) to attach to a short social media thread.
+CRITICAL RULE 1: Extract ONE key Korean data point or keyword from this text: "${content.substring(0, 300)}...".
+CRITICAL RULE 2: NO FAKE DATA. Do not make up numbers, phones, or URLs.
+It must be extremely easy to read on a mobile phone screen within 3 seconds. Use bold contrast and minimal but highly legible Korean text, focusing on a single powerful visual metaphor.`;
+
+    } else if (platform === 'eoplanet') {
+      // EO 플래닛 (스타트업/IT)
+      thumbnailRatio = "16:9";
+      infographicRatio = "16:9";
+      thumbnailPrompt = `Create a premium tech/startup editorial cover image (16:9 ratio).
+CRITICAL RULE 1: Write a concise, professional Korean keyword (1-3 words) based on: "${title}". DO NOT use the full title.
+CRITICAL RULE 2: Render this short Korean text accurately.
+The style should be modern, sleek, and abstract. Think of a high-end tech magazine cover. Use geometric shapes, dark mode themes, and perfectly rendered Korean typography.`;
+      
+      infographicPrompt = `Create a professional startup/tech architecture diagram or workflow visualization (16:9 ratio).
+CRITICAL RULE 1: Extract 2-3 professional Korean labels based on this text: "${content.substring(0, 300)}...". DO NOT use long sentences.
+CRITICAL RULE 2: ABSOLUTELY NO FAKE INFO. No fake contact info.
+Make it look like a high-quality presentation slide for IT professionals. Use sleek lines, modern corporate UI elements, and a sophisticated color scheme with perfect text legibility and minimal text density.`;
+    }
+
+
+    // 1. Generate Thumbnail
+    const thumbnailResponse = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite-image',
+      contents: thumbnailPrompt,
+      config: {
+        imageConfig: { aspectRatio: thumbnailRatio as any }
+      }
+    });
+
+    let thumbnailUrl = '';
+    const thumbnailCandidates = thumbnailResponse.candidates?.[0]?.content?.parts;
+    if (thumbnailCandidates) {
+      for (const part of thumbnailCandidates) {
+        if (part.inlineData) {
+          thumbnailUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+          break;
+        }
+      }
+    }
+
+    // 2. Generate Infographic Body Image
+    const infographicResponse = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-lite-image',
+      contents: infographicPrompt,
+      config: {
+        imageConfig: { aspectRatio: infographicRatio as any }
+      }
+    });
+
+    let infographicUrl = '';
+    const infographicCandidates = infographicResponse.candidates?.[0]?.content?.parts;
+    if (infographicCandidates) {
+      for (const part of infographicCandidates) {
+        if (part.inlineData) {
+          infographicUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+          break;
+        }
+      }
+    }
+
+    return { thumbnailUrl, infographicUrl };
+  } catch (error) {
+    console.error("Error generating images:", error);
+    throw new Error("Failed to generate images: " + (error instanceof Error ? error.message : JSON.stringify(error)));
+  }
+};
+
