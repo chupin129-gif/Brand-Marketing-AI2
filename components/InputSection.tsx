@@ -75,16 +75,19 @@ export const InputSection: React.FC<InputSectionProps> = ({
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
           <h2 className="text-xl font-extrabold text-white flex items-center gap-2 relative z-10">
             <div className="p-1.5 bg-indigo-500/20 rounded-lg border border-indigo-500/30"><Target className="w-4 h-4 text-indigo-400" /></div>
-            브랜드 및 목적 설정
+            글 작성 목적 설정
           </h2>
           <p className="text-sm text-slate-400 mt-1 relative z-10">
-            생성할 원고의 브랜드와 글의 성격을 선택해주세요.
+            생성할 원고의 브랜드, 성격, 그리고 발행 목적을 차례대로 선택해주세요.
           </p>
         </div>
 
-        <div className="space-y-4 relative z-10">
-          {/* Brand Selector */}
+        <div className="space-y-6 relative z-10">
+          {/* Step 1: Brand */}
           <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-200">
+              <span className="text-indigo-400 font-bold mr-1">Step 1.</span> 브랜드 / 제품 설정
+            </label>
             <div className="grid grid-cols-2 gap-2">
               {[
                 { id: 'hema', label: '헤마 스튜디오' },
@@ -107,12 +110,15 @@ export const InputSection: React.FC<InputSectionProps> = ({
             </div>
           </div>
 
-          {/* Content Type Selector */}
+          {/* Step 2: Content Type */}
           <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-200">
+              <span className="text-indigo-400 font-bold mr-1">Step 2.</span> 원고 포맷 설정
+            </label>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { id: 'review', label: '고객 후기형 (사례/후기 소개)' },
-                { id: 'information', label: '정보성 (지식/정보 팁)' }
+                { id: 'review', label: '✍️ 체험 / 후기형' },
+                { id: 'information', label: '💡 전문 / 정보성' }
               ].map((type) => (
                 <button
                   key={type.id}
@@ -124,6 +130,31 @@ export const InputSection: React.FC<InputSectionProps> = ({
                   }`}
                 >
                   {type.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Step 3: Purpose (Traffic vs SEO) */}
+          <div className="space-y-2">
+            <label className="block text-sm font-semibold text-slate-200">
+              <span className="text-indigo-400 font-bold mr-1">Step 3.</span> 발행 목적 및 최적화 타겟
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { id: 'traffic', label: '🚀 트래픽 / 바이럴 유입' },
+                { id: 'seo', label: '🔍 검색엔진 상위노출 (SEO)' }
+              ].map((purpose) => (
+                <button
+                  key={purpose.id}
+                  onClick={() => onChange('purpose', purpose.id)}
+                  className={`py-2 px-3 text-sm font-medium rounded-xl border transition-all flex flex-col items-center justify-center gap-1 ${
+                    params.purpose === purpose.id 
+                      ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 shadow-inner' 
+                      : 'bg-slate-900 border-slate-700/50 text-slate-400 hover:bg-slate-800'
+                  }`}
+                >
+                  {purpose.label}
                 </button>
               ))}
             </div>
@@ -334,7 +365,10 @@ export const InputSection: React.FC<InputSectionProps> = ({
         <div className="space-y-2">
           <div className="flex flex-col gap-1.5 mb-2">
             <label className="text-sm font-semibold text-slate-200 flex items-start sm:items-center gap-1 leading-snug">
-              <FileText className="w-4 h-4 text-slate-400 shrink-0 mt-0.5 sm:mt-0" /> <span className="break-keep">고객 사연 / 촬영 현장 내용 (우선순위 1~5)</span>
+              <FileText className="w-4 h-4 text-slate-400 shrink-0 mt-0.5 sm:mt-0" /> 
+              <span className="break-keep">
+                {params.contentType === 'review' ? '고객 사연 / 현장 에피소드 등 (우선순위 1~5)' : '강조할 핵심 정보 / 전문 지식 / 사례 (우선순위 1~5)'}
+              </span>
             </label>
             <div className="self-start">
               <span className="text-[10px] bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 px-2 py-1 rounded inline-flex items-center gap-1 font-bold">
@@ -362,7 +396,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
                     newStories[index].content = e.target.value;
                     onChange('stories', newStories);
                   }}
-                  placeholder={`${story.priority}순위로 강조하고 싶은 내용을 입력하세요.`}
+                  placeholder={params.contentType === 'review' ? `${story.priority}순위로 강조하고 싶은 현장 이야기나 사연을 입력하세요.` : `${story.priority}순위로 강조하고 싶은 전문 지식이나 핵심 정보를 입력하세요.`}
                   className="w-full h-20 px-3 py-2 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner resize-none text-sm leading-relaxed"
                 />
                 {params.stories.length > 1 && (

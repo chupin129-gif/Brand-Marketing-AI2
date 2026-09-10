@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
-import { BlogPostParams, GeneratedBlog, SeoTrend, Platform, KeywordTrendAnalysis } from "../types";
+import { BlogPostParams, GeneratedBlog, SeoTrend, Platform, KeywordTrendAnalysis, ValidationFeedback } from "../types";
 
 function getAIClient(): GoogleGenAI {
   const apiKey = 
@@ -20,6 +20,83 @@ function getAIClient(): GoogleGenAI {
     apiKey
   });
 }
+
+/**
+ * Step 0: Validate if the user input is sufficient and relevant enough to write a high-quality post.
+ */
+export const validateContentInput = async (params: BlogPostParams): Promise<ValidationFeedback> => {
+  const ai = getAIClient();
+  const model = 'gemini-3.7-flash';
+
+  const systemInstruction = `
+    You are an elite Chief Editor. Your absolute priority is QUALITY OVER QUANTITY.
+    You must prevent the generation of low-quality, spammy, hallucinated, or forced articles.
+    Evaluate the provided input to determine if a high-quality, professional blog post can be written from it.
+
+    Rules for Rejection (isValid: false):
+    1. LACK OF RELEVANCE: If the "Provided Stories/Content" have absolutely nothing to do with the "Main Keyword" or the "Brand", you must reject it.
+    2. LACK OF DEPTH: If the provided stories are too brief, vague, or lack any factual/contextual detail to write a 1,500-character post without hallucinating fake information, you must reject it.
+    3. FORCED WRITING: If forcing an article out of this input would result in a generic, low-quality, or spammy post, you must reject it.
+
+    Rules for Approval (isValid: true):
+    - The input provides enough specific context, anecdotes, or factual details to write a natural, high-quality post.
+
+    If rejecting, you MUST provide a clear 'reason' explaining why it's insufficient, and 2-3 specific 'suggestions' (questions or prompts) to help the user provide better information.
+  `;
+
+  const prompt = `
+    Evaluate this input:
+    - Brand: ${params.brand}
+    - Purpose: ${params.purpose}
+    - Content Type: ${params.contentType}
+    - Main Keyword: ${params.mainKeyword}
+    - Sub Keywords: ${params.subKeywords}
+    - Provided Stories/Content:
+    ${params.stories.map(s => `  * [Priority ${s.priority}]: ${s.content}`).join('\n')}
+  `;
+
+  const schema: Schema = {
+    type: Type.OBJECT,
+    properties: {
+      isValid: {
+        type: Type.BOOLEAN,
+        description: "True if the input is high quality and sufficient to write a good post. False if it lacks depth or relevance."
+      },
+      reason: {
+        type: Type.STRING,
+        description: "If isValid is false, explain exactly why the input is insufficient or irrelevant. Write in Korean."
+      },
+      suggestions: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description: "If isValid is false, provide 2-3 specific questions or suggestions to guide the user on what to add. Write in Korean."
+      }
+    },
+    required: ["isValid"]
+  };
+
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: prompt,
+      config: {
+        systemInstruction,
+        responseMimeType: 'application/json',
+        responseSchema: schema,
+        temperature: 0.1
+      }
+    });
+
+    const responseText = response.text;
+    if (!responseText) throw new Error("No response from validation API");
+    return JSON.parse(responseText) as ValidationFeedback;
+  } catch (error) {
+    console.error("Validation API error:", error);
+    // Fallback: If validation fails due to API error, let it pass to not block the user entirely, or return a generic error.
+    // For safety, we will let it pass if the validation API itself crashes, but log it.
+    return { isValid: true, reason: "", suggestions: [] };
+  }
+};
 
 /**
  * Step 1: Search for the latest platform-specific SEO/Algorithm trends using Google Search Grounding.
@@ -147,6 +224,26 @@ export const generateBlogPost = async (
 ): Promise<GeneratedBlog> => {
   const model = 'gemini-3.7-flash';
   const hasVideo = !!params.videoAssets;
+  
+  let purposeContext = "";
+  if (params.purpose === 'seo') {
+    purposeContext = `
+    [CRITICAL RULE - SEO OPTIMIZATION PURPOSE]
+    This content is strictly optimized for Search Engine Ranking (SEO). You MUST follow these exact rules:
+    1. The exact main keyword "${params.mainKeyword}" MUST be the very FIRST word in the main Title (Standard Title).
+    2. The exact main keyword "${params.mainKeyword}" MUST be the very FIRST word in the H1 tag inside the body content.
+    3. The tone must be highly informational, deep, and authoritative (E-E-A-T principles).
+    4. Use structured data logic: abundant H2/H3 tags and clear bullet points for indexability.
+    `;
+  } else {
+    purposeContext = `
+    [CRITICAL RULE - VIRAL TRAFFIC PURPOSE]
+    This content is strictly optimized for High Click-Through Rate (CTR), engagement, and viral traffic.
+    1. Focus on curiosity-inducing hooks, emotional resonance, and a highly clickable title.
+    2. Do NOT rigidly force the main keyword at the beginning if it ruins the natural flow.
+    3. Prioritize readability, short paragraphs, storytelling, and engaging tone over rigid SEO structure.
+    `;
+  }
 
   // --- BRAND CONTEXT (플랫폼별 맞춤 조화) ---
   let brandContext = '';
@@ -348,6 +445,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${purposeContext}
       ${referenceCloningContext}
       
       ### KNOWLEDGE INTEGRATION & LIVE SEARCH (MANDATORY)
@@ -397,6 +495,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${purposeContext}
       ${referenceCloningContext}
       
       ### TISTORY SEO & ALGORITHM GUIDELINES
@@ -424,6 +523,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${purposeContext}
       ${referenceCloningContext}
       
       ### WORDPRESS / GOOGLE SEO GUIDELINES
@@ -451,6 +551,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${purposeContext}
       ${referenceCloningContext}
       
       ### BLOGSPOT SEO GUIDELINES
@@ -471,6 +572,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${purposeContext}
       ${referenceCloningContext}
       
       ### 📸 INSTAGRAM CONTENT ARCHITECTURE & GUIDELINES
@@ -502,6 +604,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${purposeContext}
       ${referenceCloningContext}
       
       ### 🔥 THREADS PLATFORM GUIDELINES & VIRAL RULES
@@ -531,6 +634,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${purposeContext}
       ${referenceCloningContext}
       
       ### EO PLANET SEO & ALGORITHM GUIDELINES
@@ -560,6 +664,7 @@ export const generateBlogPost = async (
       
       ${brandContext}
       ${contentTypeContext}
+      ${purposeContext}
       ${referenceCloningContext}
       
       ### 𝕏 X (TWITTER) PLATFORM ALGORITHM & VIRAL RULES

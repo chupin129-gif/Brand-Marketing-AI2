@@ -43,6 +43,9 @@ const App: React.FC = () => {
           parsed.stories = [{ priority: 1, content: parsed.draft }];
           delete parsed.draft;
         }
+        if (!parsed.purpose) {
+          parsed.purpose = 'traffic';
+        }
         return parsed;
       } catch (e) {
         console.error('Failed to parse cached params');
@@ -51,6 +54,7 @@ const App: React.FC = () => {
     return {
       brand: 'hema',
       contentType: 'review',
+      purpose: 'traffic',
       mainKeyword: '',
       subKeywords: '',
       stories: [{ priority: 1, content: '' }],
@@ -61,6 +65,8 @@ const App: React.FC = () => {
   const [seoTrends, setSeoTrends] = useState<Partial<Record<Platform, SeoTrend>>>({});
   const [activePlatform, setActivePlatform] = useState<Platform>('naver');
   const [isGeneratingImages, setIsGeneratingImages] = useState(false);
+
+  const [validationFeedback, setValidationFeedback] = useState<ValidationFeedback | null>(null);
 
   // Auto-save params
   useEffect(() => {
@@ -135,6 +141,18 @@ const App: React.FC = () => {
       setActivePlatform(platform);
       setIsSidebarOpen(false); // Close sidebar on mobile when submitting
       setErrorMessage('');
+      setValidationFeedback(null);
+      
+      // Step 0: Validate Input
+      setStatus(AppStatus.VALIDATING_INPUT);
+      const { validateContentInput } = await import('./services/geminiService');
+      const validation = await validateContentInput(params);
+      
+      if (!validation.isValid) {
+        setValidationFeedback(validation);
+        setStatus(AppStatus.VALIDATION_FAILED);
+        return;
+      }
       
       // Step 1: Check if we have trends in memory or cache
       let currentTrend = seoTrends[platform] || getCachedTrend(platform);
@@ -280,6 +298,51 @@ const App: React.FC = () => {
             </div>
 
             {/* Status Messages */}
+            {status === AppStatus.VALIDATING_INPUT && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-12 h-12 border-3 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mb-4" />
+                <p className="text-lg font-bold text-white mb-2">
+                  작성하신 기획안을 에디터가 검토하고 있습니다...
+                </p>
+                <p className="text-sm text-slate-400 max-w-md">
+                  고품질의 글이 나올 수 있는 충분한 정보인지 분석 중입니다.
+                </p>
+              </div>
+            )}
+
+            {status === AppStatus.VALIDATION_FAILED && validationFeedback && (
+              <div className="flex flex-col items-center justify-center py-12 px-6 bg-amber-950/30 border border-amber-900/50 rounded-2xl text-center">
+                <div className="w-12 h-12 bg-amber-500/10 rounded-2xl flex items-center justify-center text-amber-400 mb-4">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-extrabold text-amber-200 mb-2">에디터 피드백: 원고 생성을 잠시 멈췄습니다.</h3>
+                <p className="text-sm text-amber-100/80 mb-6 max-w-xl leading-relaxed">
+                  {validationFeedback.reason}
+                </p>
+                
+                <div className="w-full max-w-xl bg-slate-900/50 rounded-xl p-5 text-left border border-amber-900/30">
+                  <h4 className="text-sm font-bold text-amber-400 mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4" /> 이렇게 내용을 보충해 주시면 훨씬 좋은 글이 됩니다!
+                  </h4>
+                  <ul className="space-y-3">
+                    {validationFeedback.suggestions.map((suggestion, idx) => (
+                      <li key={idx} className="text-sm text-slate-300 flex items-start gap-2">
+                        <span className="text-amber-500 mt-0.5">•</span> 
+                        <span className="leading-relaxed">{suggestion}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <button
+                  onClick={() => setStatus(AppStatus.IDLE)}
+                  className="mt-8 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition-colors text-sm"
+                >
+                  입력창으로 돌아가기
+                </button>
+              </div>
+            )}
+
             {status === AppStatus.FETCHING_TRENDS && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="w-12 h-12 border-3 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin mb-4" />

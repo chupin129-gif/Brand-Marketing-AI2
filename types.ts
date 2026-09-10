@@ -1,9 +1,11 @@
 export type Brand = 'hema' | 'samsong' | 'tmc' | 'makemysong';
 export type ContentType = 'review' | 'information';
+export type ContentPurpose = 'traffic' | 'seo';
 
 export interface BlogPostParams {
   brand: Brand;
   contentType: ContentType;
+  purpose: ContentPurpose;
   mainKeyword: string;
   subKeywords: string;
   trendTopic?: string;
@@ -58,9 +60,17 @@ export interface SeoTrend {
 
 export enum AppStatus {
   IDLE = 'IDLE',
+  VALIDATING_INPUT = 'VALIDATING_INPUT',
+  VALIDATION_FAILED = 'VALIDATION_FAILED',
   FETCHING_TRENDS = 'FETCHING_TRENDS',
   PROCESSING_VIDEO = 'PROCESSING_VIDEO',
   GENERATING_CONTENT = 'GENERATING_CONTENT',
   SUCCESS = 'SUCCESS',
   ERROR = 'ERROR',
+}
+
+export interface ValidationFeedback {
+  isValid: boolean;
+  reason: string;
+  suggestions: string[];
 }
