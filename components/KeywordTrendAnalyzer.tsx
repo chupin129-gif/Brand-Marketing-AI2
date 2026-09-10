@@ -7,10 +7,11 @@ import { motion } from 'motion/react';
 interface KeywordTrendAnalyzerProps {
   mainKeyword: string;
   activePlatform: Platform;
+  contentType?: 'review' | 'information';
   onApplyTrend: (mainKeyword: string, subKeywords: string, trendTopic: string) => void;
 }
 
-export const KeywordTrendAnalyzer: React.FC<KeywordTrendAnalyzerProps> = ({ mainKeyword, activePlatform, onApplyTrend }) => {
+export const KeywordTrendAnalyzer: React.FC<KeywordTrendAnalyzerProps> = ({ mainKeyword, activePlatform, contentType = 'review', onApplyTrend }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<KeywordTrendAnalysis | null>(null);
   const [appliedIndex, setAppliedIndex] = useState<number | null>(null);
@@ -23,7 +24,7 @@ export const KeywordTrendAnalyzer: React.FC<KeywordTrendAnalyzerProps> = ({ main
     setIsAnalyzing(true);
     setAppliedIndex(null);
     try {
-      const result = await analyzeKeywordTrends(mainKeyword, activePlatform);
+      const result = await analyzeKeywordTrends(mainKeyword, activePlatform, contentType);
       setAnalysis(result);
     } catch (e) {
       alert("트렌드 분석에 실패했습니다.");

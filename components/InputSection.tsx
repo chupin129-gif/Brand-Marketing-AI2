@@ -184,17 +184,16 @@ export const InputSection: React.FC<InputSectionProps> = ({
             />
           </div>
 
-          {params.contentType === 'information' && (
-            <KeywordTrendAnalyzer
-              mainKeyword={params.mainKeyword}
-              activePlatform={activePlatform as Platform}
-              onApplyTrend={(main, sub, trend) => {
-                onChange('mainKeyword', main);
-                onChange('subKeywords', sub);
-                onChange('trendTopic', trend);
-              }}
-            />
-          )}
+          <KeywordTrendAnalyzer
+            mainKeyword={params.mainKeyword}
+            activePlatform={activePlatform as Platform}
+            contentType={params.contentType}
+            onApplyTrend={(main, sub, trend) => {
+              onChange('mainKeyword', main);
+              onChange('subKeywords', sub);
+              onChange('trendTopic', trend);
+            }}
+          />
         </div>
 
         {/* Sub Keywords */}
@@ -210,21 +209,19 @@ export const InputSection: React.FC<InputSectionProps> = ({
           />
         </div>
 
-        {/* Trend Topic Field (Visible if information type) */}
-        {params.contentType === 'information' && (
-          <div className="space-y-2">
-            <label className="block text-sm font-semibold text-slate-200 flex items-center gap-1">
-              <Target className="w-4 h-4 text-emerald-400" /> 트렌드 테마
-            </label>
-            <input
-              type="text"
-              value={params.trendTopic || ''}
-              onChange={(e) => onChange('trendTopic', e.target.value)}
-              placeholder="예: 장마철 실내 데이트, 연말 모임"
-              className="w-full px-4 py-3 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner"
-            />
-          </div>
-        )}
+        {/* Trend Topic Field (Visible for both review and information) */}
+        <div className="space-y-2">
+          <label className="block text-sm font-semibold text-slate-200 flex items-center gap-1">
+            <Target className="w-4 h-4 text-emerald-400" /> 트렌드 테마 (선택)
+          </label>
+          <input
+            type="text"
+            value={params.trendTopic || ''}
+            onChange={(e) => onChange('trendTopic', e.target.value)}
+            placeholder={params.contentType === 'review' ? "예: 봄 웨딩 시즌, 연말 기념일, 환승연애 BGM 등" : "예: 장마철 실내 데이트, 연말 모임 등"}
+            className="w-full px-4 py-3 bg-slate-900 border border-slate-700/50 rounded-xl focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 text-white outline-none transition-all placeholder:text-slate-600 shadow-inner"
+          />
+        </div>
 
         {/* Video Upload */}
         <div className="space-y-2">

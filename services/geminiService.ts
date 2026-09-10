@@ -164,18 +164,27 @@ export const fetchLatestSeoTrends = async (oldTrend?: SeoTrend, platform: Platfo
  */
 export const analyzeKeywordTrends = async (
   mainKeyword: string,
-  platform: Platform = 'naver'
+  platform: Platform = 'naver',
+  contentType: 'review' | 'information' = 'review'
 ): Promise<KeywordTrendAnalysis> => {
   const model = 'gemini-3.7-flash';
   const ai = getAIClient();
   const currentMonth = new Date().getMonth() + 1;
   const currentSeason = [12, 1, 2].includes(currentMonth) ? '겨울' : [3, 4, 5].includes(currentMonth) ? '봄' : [6, 7, 8].includes(currentMonth) ? '여름' : '가을';
 
+  const formatTargetDesc = contentType === 'review'
+    ? '체험/후기형 블로그 글 (고객 방문 사례, 현장 에피소드, 이용 후기)'
+    : '전문 정보성/칼럼형 블로그 글 (전문 지식, 꿀팁, 가이드)';
+
+  const titleExample = contentType === 'review'
+    ? '봄 웨딩 시즌 맞이 직접 다녀온 셀프축가 녹음 솔직 후기!'
+    : '장마철에도 문제 없는 실내 데이트 코스 & 녹음 스튜디오 추천!';
+
   const systemInstruction = `
     당신은 네이버 검색 노출(SEO) 및 실시간 트렌드 분석 전문가입니다.
     사용자가 입력한 '메인 키워드'를 기반으로, 실제 네이버 검색 유저들이 많이 찾는 '자동완성 검색어'와 '연관 검색어'를 유추하고,
     현재 시기(${currentMonth}월, ${currentSeason})에 맞는 라이프스타일/시즌 트렌드를 결합하여 
-    정보성 블로그 글에서 조회수를 폭발시킬 수 있는 황금 결합 키워드 세트를 3가지 제안해주세요.
+    ${formatTargetDesc}에서 조회수를 폭발시킬 수 있는 황금 결합 키워드 세트를 3가지 제안해주세요.
 
     다음 JSON 스키마를 엄격히 준수하여 응답하세요:
     {
@@ -186,10 +195,10 @@ export const analyzeKeywordTrends = async (
       ],
       "recommendedCombinations": [
         {
-          "titleIdea": "제목 아이디어 (예: 장마철에도 문제 없는 셀프축가 하기 좋은 스튜디오 추천!)",
+          "titleIdea": "제목 아이디어 (예: ${titleExample})",
           "mainKeyword": "메인키워드",
           "subKeywords": "서브키워드1, 서브키워드2",
-          "trendTopic": "장마철 실내 데이트",
+          "trendTopic": "시즌 이슈 또는 테마 (예: 봄 웨딩 시즌, 실내 데이트 등)",
           "reason": "이 조합이 왜 클릭률을 높이는지 설명"
         }
       ]
@@ -198,7 +207,7 @@ export const analyzeKeywordTrends = async (
 
   const response = await ai.models.generateContent({
     model,
-    contents: `메인 키워드: ${mainKeyword}\n타겟 플랫폼: ${platform}\n\n이 키워드에 대한 트렌드 분석 및 황금 키워드 조합 3가지를 제안해줘.`,
+    contents: `메인 키워드: ${mainKeyword}\n글 종류: ${contentType === 'review' ? '체험/후기형' : '전문 정보성'}\n타겟 플랫폼: ${platform}\n\n이 키워드에 대한 트렌드 분석 및 황금 키워드 조합 3가지를 제안해줘.`,
     config: {
       systemInstruction,
       responseMimeType: "application/json",
