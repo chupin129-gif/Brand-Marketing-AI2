@@ -416,12 +416,16 @@ export const generateBlogPost = async (
       [글의 목적: 고객 후기 및 진행 사례 (Client Story & Case Study)]
       - 본 블로그/채널의 운영자(브랜드 담당자) 시점에서, 우리 서비스를 이용하거나 프로젝트를 함께 진행한 고객의 실제 사연, 진행 과정, 만족도 및 감동 포인트를 생생하게 소개하는 글입니다.
       - 고객이 느낀 감동과 가치를 브랜드의 전문성과 정성스러운 디렉팅/작업 과정과 연결하여 자연스럽고 신뢰감 있는 스토리텔링으로 풀어내세요.
+      - 🚨 맥락 유지: 모든 에피소드는 오직 [메인 키워드: ${params.mainKeyword}]를 중심으로 전개되어야 합니다.
     `;
   } else if (params.contentType === 'information') {
     contentTypeContext = `
-      [글의 목적: 정보성 (Knowledge & Expert Tips)]
-      - 독자가 궁금해할 전문 지식, 산업 트렌드, 유용한 팁을 논리적이고 명확하게 전달하세요.
-      - 브랜드의 전문성과 권위성(Expertise & Authority)을 강조하여 신뢰도를 높이는 데 집중하세요.
+      [글의 목적: 전문 정보성 / 가이드 칼럼 (Knowledge & Expert Guide)]
+      - 핵심 원칙: 정보성 글이라 할지라도 모든 목차(H2, H3), 지식, 팁, 가이드는 오직 [메인 키워드: "${params.mainKeyword}"]와 [타겟 브랜드]에 100% 집중되어야 합니다.
+      - 🚨 곁가지 주제 확장 엄격 금지 (Anti-Drift):
+        * 사용자가 1~5순위 강조 내용에 특정 이벤트나 기념일(예: '추석 명절', '부모님 환갑/칠순/팔순 잔치', '리마인드 웨딩', '결혼 준비' 등)을 적었더라도, 절대로 메인 키워드와 무관한 '환갑 잔치 식순', '칠순 잔치 진행 요령', '명절 제사/선물 예절' 같은 엉뚱한 일반 상식 팁으로 소제목을 파거나 본문 분량을 채우지 마십시오!
+        * 해당 기념일/상황은 오직 "왜 이번 추석이나 환갑/칠순에 [${params.mainKeyword}]가 최고의 감동적인 선택이 되는가?"라는 계기 및 배경 설명으로만 1~2문장으로 매끄럽게 연결해야 합니다.
+        * 본문의 모든 소제목과 실전 팁은 반드시 [${params.mainKeyword}]를 성공적으로 준비/제작하는 전문 노하우, 실패 없는 팁, 브랜드의 전문 솔루션으로만 채워져야 합니다.
     `;
   }
 
@@ -736,7 +740,11 @@ export const generateBlogPost = async (
     ${params.brand === 'hema' && params.contentType === 'review' && params.musicDescription ? `- Music Description/Story: ${params.musicDescription}` : ''}
     - Customer Stories / Priority Notes:
     ${(params.stories || []).map(s => `      [${s.priority}순위 강조 내용]: ${s.content}`).join('\n')}
-    * ⚠️ IMPORTANT: 반영 지침: 위 순위는 고객이 원하는 글의 비중과 순서입니다. 1순위 내용을 가장 중심적이고 비중 있게 다루고, 2순위~5순위 내용도 빠짐없이 글의 흐름에 맞게 순차적으로 골고루 반영해 주세요.
+    
+    ★ [절대 준수 원칙: 단일 서사 척추(Single Core Spine) 및 맥락 탈선 방지(Anti-Drift) - 정보성/후기형 공통]:
+    1. 1~5순위의 항목들을 각각 별개의 독립된 소제목(챕터)으로 쪼개어 기계적으로 나열하지 마십시오.
+    2. 1~5순위의 모든 내용은 오직 [메인 키워드: "${params.mainKeyword}"]와 [브랜드]라는 "단 하나의 중심 축"을 탄탄하게 완성하기 위한 계기-배경-해결-결과로 유기적으로 융합되어야 합니다.
+    3. [곁가지 정보 확장 절대 금지]: 1~5순위에 특정 이벤트(예: '추석 명절', '환갑/칠순 잔치', '리마인드 웨딩' 등)가 언급되어 있더라도, 정보성 글에서 그 이벤트 자체의 일반 팁(예: 환갑 잔치 식순, 잔치 진행법, 명절 음식 등)으로 곁가지를 파지 마십시오. 해당 이벤트는 오직 "${params.mainKeyword}"가 필요한 상황/계기로만 1~2문장으로 자연스럽게 언급하고, 글 전체의 소제목(H2, H3)과 핵심 지식/노하우는 100% "${params.mainKeyword}"에만 집중하세요.
     ${hasVideo ? '- **Video Context**: Video frames are attached. Describe these visuals authentically in the text.' : ''}
 
     [Output Format - JSON]
