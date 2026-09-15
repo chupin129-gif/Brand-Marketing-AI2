@@ -726,6 +726,46 @@ export const generateBlogPost = async (
     - Rely ONLY on the newly searched live data to build your content. Do NOT rely on outdated memory or hallucinate features.
   `;
 
+  let hybridSeoRules = '';
+  if (['naver', 'tistory', 'blogspot', 'wordpress'].includes(platform)) {
+    hybridSeoRules = `
+    ★ [2026.09 하이브리드 인용최적화 엔진 적용 (블로그 플랫폼 전용)] ★
+    
+    1. [본문 최상단: 제목 추천 5개 섹션]:
+       본문(content)의 가장 첫 줄에는 반드시 아래와 같이 5개의 추천 제목을 번호 목록으로 출력하세요:
+       ## 💡 추천 제목 리스트
+       1. (추천 제목 1 - 대괄호 금지)
+       2. (추천 제목 2 - 대괄호 금지)
+       3. (추천 제목 3 - 대괄호 금지)
+       4. (추천 제목 4 - 대괄호 금지)
+       5. (추천 제목 5 - 대괄호 금지)
+       
+       그 후 빈 줄을 둔 뒤, 최종 선택된 최적의 1개 제목을 # (H1)으로 시작하여 실제 본문을 전개하세요.
+       예: # 최종 선택된 제목
+       
+    2. [엄격한 모바일 가독성 및 줄바꿈 호흡]:
+       - 한 문단은 반드시 1~3문장 이내로 끊어 쓰고 빈 줄을 넣으세요. (스마트폰 화면에서 답답한 텍스트 벽 현상 절대 금지)
+       - 중요한 메시지 전환 시 자연스럽게 줄바꿈을 적용하세요.
+       
+    3. [헤딩 구조 강제]:
+       - 본문 대주제는 ## (H2)로 3개 이상 구성하고, 각 ## 아래에는 상세 노하우를 담은 ### (H3)를 배치하여 검색엔진과 AI가 인용하기 좋은 논리적 구조를 유지하세요.
+       - H3의 첫 문장은 해당 단락의 결론을 또렷하게 요약하는 핵심 문장으로 시작하세요.
+       
+    4. [플랫폼 및 글 종류별 하단 FAQ (자주 묻는 질문 3개)]:
+       - 본문 맨 끝에 아래 형식으로 [## 자주 묻는 질문] 섹션을 반드시 3개(Q1~Q3) 작성하세요:
+       ## 자주 묻는 질문
+       ### Q1. ${params.contentType === 'information' ? '실제 검색자가 궁금해할 핵심 질문?' : '비슷한 상황의 고객들이 가장 많이 묻는 실전 질문?'}
+       A1. 2~3문장의 명쾌한 답변.
+       ### Q2. ${params.contentType === 'information' ? '비용/준비기간/주의사항 관련 질문?' : '준비 과정이나 예약 시 알아둘 점?'}
+       A2. 2~3문장의 구체적이고 실용적인 답변.
+       ### Q3. ${params.contentType === 'information' ? '초보자 추천 또는 필수 체크포인트 질문?' : `우리 브랜드(${params.brand})만의 특별한 차별점 질문?`}
+       A3. 2~3문장의 명확한 조언.
+       
+    5. [해시태그]:
+       - 해시태그는 배열(hashtags)에 본문 및 키워드와 밀접하게 관련된 고효율 태그를 **정확히 20개** 엄선하여 넣으세요.
+    `;
+  }
+
   const promptText = `
     ${guardrailContext}
     
@@ -746,6 +786,8 @@ export const generateBlogPost = async (
     2. 1~5순위의 모든 내용은 오직 [메인 키워드: "${params.mainKeyword}"]와 [브랜드]라는 "단 하나의 중심 축"을 탄탄하게 완성하기 위한 계기-배경-해결-결과로 유기적으로 융합되어야 합니다.
     3. [곁가지 정보 확장 절대 금지]: 1~5순위에 특정 이벤트(예: '추석 명절', '환갑/칠순 잔치', '리마인드 웨딩' 등)가 언급되어 있더라도, 정보성 글에서 그 이벤트 자체의 일반 팁(예: 환갑 잔치 식순, 잔치 진행법, 명절 음식 등)으로 곁가지를 파지 마십시오. 해당 이벤트는 오직 "${params.mainKeyword}"가 필요한 상황/계기로만 1~2문장으로 자연스럽게 언급하고, 글 전체의 소제목(H2, H3)과 핵심 지식/노하우는 100% "${params.mainKeyword}"에만 집중하세요.
     ${hasVideo ? '- **Video Context**: Video frames are attached. Describe these visuals authentically in the text.' : ''}
+
+    ${hybridSeoRules}
 
     [Output Format - JSON]
     {
@@ -832,19 +874,144 @@ export const generateBlogPost = async (
 export const generateInfographics = async (
   title: string,
   content: string,
-  platform: Platform
-): Promise<{ thumbnailUrl: string; infographicUrl: string }> => {
+  platform: Platform,
+  contentType: ContentType = 'information',
+  brand: Brand = 'hema'
+): Promise<{ thumbnailUrl?: string; infographicUrl?: string; generatedImages?: { url: string; caption: string; locationHint: string; roleTitle?: string }[] }> => {
   const ai = getAIClient();
 
   try {
-    let thumbnailPrompt = '';
-    let infographicPrompt = '';
-    let thumbnailRatio = "1:1";
-    let infographicRatio = "3:4";
-
-    // 플랫폼별 썸네일 및 이미지 가이드라인 분기처리
     if (['naver', 'tistory', 'blogspot', 'wordpress'].includes(platform)) {
-      // 블로그 계열 (Naver, Tistory, Blogspot, WordPress)
+      // 5-image generation logic for blog posts
+      const isInformationType = contentType === 'information';
+      const promptPlannerInstruction = `
+      You are a professional visual director for Naver blog posts specializing in ${brand} content.
+      Analyze the following blog post title and content, and plan images to generate.
+      
+      ${isInformationType ? `
+      ========================================================================================
+      ★ [시스템 프롬프트: 네이버 블로그 정보성 이미지 생성 비서]
+      당신은 "네이버 블로그 정보성 이미지 생성 비서"입니다.
+      본문 내용을 시각화한 정확히 5장의 이미지 프롬프트를 기획해야 합니다. (모든 이미지 1:1 비율)
+      화려한 추상적 이미지나 감성 소품(타자기, 커피잔 등 무관한 소품)은 절대 금지합니다.
+      명확한 정보 전달력과 가독성, 신뢰감 있는 정보 정리 톤이 최우선입니다.
+
+      ■ 이미지 5장 필수 구성 (역할 고정):
+      1번. 대표 썸네일 (클릭형 / 큰 글자)
+        - roleTitle: "① 대표 썸네일"
+        - locationHint: "글 맨 위 (대표 이미지)"
+        - 기획 원칙:
+          * 본문 주제와 직접 관련된 실사 배경(예: 스튜디오 콘솔, 음향 장비, 치아 구강 케어, 작곡/영상 작업 화면 등)을 묵직하고 어둡게 처리.
+          * 썸네일 문구 2줄 구조: 1줄차 = 메인 키워드, 2줄차 = 후킹 문구 (단정형/숫자형/반전형, 예: "이게 진짜 핵심", "생각보다 쉬움", "모르면 손해").
+          * 폰트: 굵은 볼드 고딕, 중앙 가로폭 80% 이내 배치, 핵심 1곳에만 강조색(형광연두/노랑/주황/하늘색/민트 중 1개) 적용.
+          * 프롬프트: "A premium 1:1 dark-toned photorealistic background related to the topic and ${brand}, with bold, legible typography overlay in Korean: [1줄차: 주제] [2줄차: 후킹카피]. High-contrast, clean bold modern sans-serif Korean lettering, prominent headline layout, no clutter."
+
+      2번. 핵심 요약형 (인포그래픽)
+        - roleTitle: "② 핵심 요약"
+        - locationHint: "첫 소제목 아래 (핵심 요약 포인트)"
+        - 기획 원칙:
+          * 상단 제목 배너 1줄 + 본문의 핵심 포인트 3개를 깔끔한 라운드 카드 3개로 정리.
+          * 파스텔 톤(연민트/연베이지/연그린 중 1개), 귀엽고 깔끔한 플랫 일러스트 아이콘 3개와 초단문(10자 이내).
+          * 프롬프트: "Clean modern Korean infographic card with soft pastel background, rounded card containers showing 3 key bullet points with flat minimalist vector icons representing the main points, neat Korean typography, simple, high readability, 1:1 aspect ratio."
+
+      3번. 본문 유형 맞춤형 (인포그래픽: 단계도 / 비교표 / 체크리스트 / 숫자 강조 카드)
+        - roleTitle: "③ 상세 정리 (맞춤 인포그래픽)"
+        - locationHint: "본문 중간 (단계·비교·핵심 노하우 문단 옆)"
+        - 기획 원칙:
+          * 본문 내용에 맞춰 [단계도(1~3단계)], [비교표(일반 vs 우리방식)], [체크리스트(체크박스 3~4개)], [숫자 강조 카드] 중 가장 적합한 1가지를 선택하여 제작.
+          * 프롬프트: "Professional structured Korean infographic diagram (step-by-step flowchart or comparison chart) illustrating the process, modern pastel aesthetics, rounded corners, clean icons, bold numbers, 1:1 ratio."
+
+      4번. 주의사항·팁형 (인포그래픽)
+        - roleTitle: "④ 주의사항·꿀팁"
+        - locationHint: "주의사항 또는 핵심 팁 문단 옆"
+        - 기획 원칙:
+          * 본문의 주의사항이나 실패 없는 실전 꿀팁 2~3개 정리.
+          * 경고/팁 뱃지 아이콘 + 산뜻한 배색 + 초단문 가이드.
+          * 프롬프트: "Helpful pro-tips and caution guide infographic in Korean, pastel card with warning/check icons, highlights 2-3 essential tips, clean layout, minimal design, 1:1 aspect ratio."
+
+      5번. 마무리 정리형 (핵심 한 줄 카드)
+        - roleTitle: "⑤ 마무리 정리"
+        - locationHint: "마지막 결론 및 총정리 문단"
+        - 기획 원칙:
+          * 본문의 결론을 강력한 한 문장으로 크게 보여주는 깔끔한 마무리 카드.
+          * 여백이 살아있는 미니멀 디자인, 장식 최소화, 신뢰감과 완성도를 주는 레이아웃.
+          * 프롬프트: "Minimalist elegant conclusion quote card in Korean, displaying a single powerful key takeaway sentence about the topic and ${brand}, clean typography, generous whitespace, warm subtle background tone, 1:1 aspect ratio."
+      ========================================================================================
+      ` : `
+      Create between 3 and 5 image prompts tailored to this narrative case study / review post:
+      - High-quality, authentic, photorealistic visuals representing the brand (${brand}), emotional customer moments, or studio process.
+      - Strictly no random unrelated props.
+      - 1:1 aspect ratio.
+      `}
+
+      Return ONLY a JSON array of objects with the following format:
+      [
+        {
+          "roleTitle": "${isInformationType ? '① 대표 썸네일' : '대표 썸네일'}",
+          "prompt": "Detailed English prompt for text-to-image model (Imagen 3), describe subject, scene, lighting, style, composition...",
+          "caption": "A friendly Korean caption describing the image to the reader",
+          "locationHint": "${isInformationType ? '글 맨 위 (대표 이미지)' : '글 상단 도입부'}"
+        }
+      ]
+      `;
+
+      const plannerResponse = await ai.models.generateContent({
+        model: 'gemini-2.5-flash',
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: promptPlannerInstruction },
+              { text: `Title: ${title}\n\nContent:\n${content}\n\nBrand: ${brand}\nContentType: ${contentType}` }
+            ]
+          }
+        ],
+        config: {
+          responseMimeType: "application/json"
+        }
+      });
+
+      const text = plannerResponse.text || "[]";
+      let imagePrompts: any[] = [];
+      try {
+        imagePrompts = JSON.parse(text);
+      } catch {
+        console.warn("Failed to parse image prompts JSON:", text);
+        imagePrompts = [];
+      }
+
+      if (imagePrompts.length > 0) {
+        const generatedImages: { url: string; caption: string; locationHint: string; roleTitle?: string }[] = [];
+        for (const item of imagePrompts) {
+          try {
+            const imgResponse = await ai.models.generateImages({
+              model: 'imagen-3.0-generate-002',
+              prompt: item.prompt,
+              config: {
+                numberOfImages: 1,
+                aspectRatio: '1:1',
+                outputMimeType: 'image/jpeg'
+              }
+            });
+            const base64ImageBytes = imgResponse.generatedImages?.[0]?.image?.imageBytes;
+            if (base64ImageBytes) {
+              generatedImages.push({
+                url: `data:image/jpeg;base64,${base64ImageBytes}`,
+                caption: item.caption,
+                locationHint: item.locationHint,
+                roleTitle: item.roleTitle
+              });
+            }
+          } catch (genErr) {
+            console.error("Individual image generation error:", genErr);
+          }
+        }
+        if (generatedImages.length > 0) {
+          return { generatedImages };
+        }
+      }
+
+      // Fallback
       thumbnailRatio = "1:1";
       infographicRatio = "3:4";
       thumbnailPrompt = `Create a highly engaging, professional blog thumbnail image (1:1 ratio) suitable for ${platform}. 

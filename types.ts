@@ -47,6 +47,12 @@ export interface GeneratedBlog {
   attachedAssets?: VideoAssets;
   thumbnailUrl?: string;
   infographicUrl?: string;
+  generatedImages?: {
+    url: string;
+    caption: string;
+    locationHint: string;
+    roleTitle?: string;
+  }[];
 }
 
 export type Platform = 'naver' | 'wordpress' | 'tistory' | 'blogspot' | 'instagram' | 'threads' | 'eoplanet' | 'x';

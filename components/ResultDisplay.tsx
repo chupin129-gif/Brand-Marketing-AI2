@@ -483,7 +483,41 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
             </div>
 
             {/* Display Generated Images */}
-            {(currentData.thumbnailUrl || currentData.infographicUrl) && (
+            {currentData.generatedImages && currentData.generatedImages.length > 0 ? (
+              <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 border-t border-slate-700/50 pt-8">
+                {currentData.generatedImages.map((img, idx) => (
+                  <div key={idx} className="bg-slate-800/80 rounded-xl overflow-hidden border border-slate-700/60 flex flex-col group hover:border-slate-500 transition-all shadow-lg">
+                    <div className="relative aspect-square w-full bg-slate-900 overflow-hidden">
+                      {img.roleTitle && (
+                        <div className="absolute top-2 left-2 z-10 bg-emerald-600/90 text-white text-xs font-semibold px-2.5 py-1 rounded-md shadow-md backdrop-blur-sm">
+                          {img.roleTitle}
+                        </div>
+                      )}
+                      <img 
+                        src={img.url} 
+                        alt={img.caption || "Generated Image"} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        loading="lazy"
+                      />
+                    </div>
+                    <div className="p-3.5 flex-1 flex flex-col justify-between">
+                      <div>
+                        {img.locationHint && (
+                          <div className="inline-block px-2 py-0.5 bg-blue-500/10 text-blue-400 text-xs rounded mb-1.5 border border-blue-500/20 font-medium max-w-full truncate">
+                            📍 {img.locationHint}
+                          </div>
+                        )}
+                        {img.caption && (
+                          <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed">
+                            {img.caption}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (currentData.thumbnailUrl || currentData.infographicUrl) && (
               <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-slate-700/50 pt-8">
                 {currentData.thumbnailUrl && (
                   <div className="space-y-3">
