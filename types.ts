@@ -39,6 +39,8 @@ export interface GeneratedBlog {
     standard: string;
     emotional: string;
     clickbait: string;
+    trend?: string;
+    viral?: string;
   };
   content: string;
   hashtags: string[];

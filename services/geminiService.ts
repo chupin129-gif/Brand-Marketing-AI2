@@ -731,23 +731,20 @@ export const generateBlogPost = async (
     hybridSeoRules = `
     ★ [2026.09 하이브리드 인용최적화 엔진 적용 (블로그 플랫폼 전용)] ★
     
-    1. [본문 최상단: 제목 추천 5개 섹션]:
-       본문(content)의 가장 첫 줄에는 반드시 아래와 같이 5개의 추천 제목을 번호 목록으로 출력하세요:
-       ## 💡 추천 제목 리스트
-       1. (추천 제목 1 - 대괄호 금지)
-       2. (추천 제목 2 - 대괄호 금지)
-       3. (추천 제목 3 - 대괄호 금지)
-       4. (추천 제목 4 - 대괄호 금지)
-       5. (추천 제목 5 - 대괄호 금지)
-       
-       그 후 빈 줄을 둔 뒤, 최종 선택된 최적의 1개 제목을 # (H1)으로 시작하여 실제 본문을 전개하세요.
-       예: # 최종 선택된 제목
+    1. [제목 추천 5선 (JSON 응답용)]:
+       JSON의 "titles" 객체 내에 아래의 5가지 컨셉으로 각각 최적화된 제목을 생성하세요 (대괄호 금지):
+       - standard: 검색 노출에 가장 정석적인 제목 (★필수: 반드시 '${params.mainKeyword}' 메인 키워드가 제목의 가장 첫 단어로 띄어쓰기 없이 바로 시작되어야 합니다.)
+       - emotional: 독자의 감성을 자극하는 제목
+       - clickbait: 호기심과 도파민을 유발하는 후킹 제목
+       - trend: 최근 트렌드와 결합된 제목
+       - viral: 커뮤니티 등에서 바이럴되기 좋은 제목
        
     2. [엄격한 모바일 가독성 및 줄바꿈 호흡]:
        - 한 문단은 반드시 1~3문장 이내로 끊어 쓰고 빈 줄을 넣으세요. (스마트폰 화면에서 답답한 텍스트 벽 현상 절대 금지)
        - 중요한 메시지 전환 시 자연스럽게 줄바꿈을 적용하세요.
        
-    3. [헤딩 구조 강제]:
+    3. [헤딩 구조 강제 (본문 내 제목 추천 제거)]:
+       - 본문의 시작은 별도의 추천 제목 목록 없이, 바로 최종 선택된 # (H1) 제목으로 시작하세요.
        - 본문 대주제는 ## (H2)로 3개 이상 구성하고, 각 ## 아래에는 상세 노하우를 담은 ### (H3)를 배치하여 검색엔진과 AI가 인용하기 좋은 논리적 구조를 유지하세요.
        - H3의 첫 문장은 해당 단락의 결론을 또렷하게 요약하는 핵심 문장으로 시작하세요.
        
@@ -792,9 +789,11 @@ export const generateBlogPost = async (
     [Output Format - JSON]
     {
       "titles": {
-        "standard": "SEO Optimized Standard Title (Focus on keywords & clarity)",
+        "standard": "SEO Optimized Standard Title (MUST START with the main keyword)",
         "emotional": "Emotional & Story-driven Title (Focus on feeling & empathy)",
-        "clickbait": "High CTR / Benefit-driven Title (Curiosity and strong hook)"
+        "clickbait": "High CTR / Benefit-driven Title (Curiosity and strong hook)",
+        "trend": "Title utilizing latest trends",
+        "viral": "Highly shareable viral title"
       },
       "content": "Markdown content formatted specifically for ${platform}",
       "hashtags": ["#tag1", "#tag2"...],
@@ -811,9 +810,11 @@ export const generateBlogPost = async (
         properties: {
           standard: { type: Type.STRING },
           emotional: { type: Type.STRING },
-          clickbait: { type: Type.STRING }
+          clickbait: { type: Type.STRING },
+          trend: { type: Type.STRING },
+          viral: { type: Type.STRING }
         },
-        required: ["standard", "emotional", "clickbait"]
+        required: ["standard", "emotional", "clickbait", "trend", "viral"]
       },
       content: { type: Type.STRING },
       hashtags: { 
@@ -956,7 +957,7 @@ export const generateInfographics = async (
       `;
 
       const plannerResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3.7-flash',
         contents: [
           {
             role: 'user',
@@ -984,23 +985,26 @@ export const generateInfographics = async (
         const generatedImages: { url: string; caption: string; locationHint: string; roleTitle?: string }[] = [];
         for (const item of imagePrompts) {
           try {
-            const imgResponse = await ai.models.generateImages({
-              model: 'imagen-3.0-generate-002',
-              prompt: item.prompt,
+            const imgResponse = await ai.models.generateContent({
+              model: 'gemini-3.1-flash-lite-image',
+              contents: item.prompt,
               config: {
-                numberOfImages: 1,
-                aspectRatio: '1:1',
-                outputMimeType: 'image/jpeg'
+                imageConfig: { aspectRatio: '1:1' as any }
               }
             });
-            const base64ImageBytes = imgResponse.generatedImages?.[0]?.image?.imageBytes;
-            if (base64ImageBytes) {
-              generatedImages.push({
-                url: `data:image/jpeg;base64,${base64ImageBytes}`,
-                caption: item.caption,
-                locationHint: item.locationHint,
-                roleTitle: item.roleTitle
-              });
+            const candidates = imgResponse.candidates?.[0]?.content?.parts;
+            if (candidates) {
+              for (const part of candidates) {
+                if (part.inlineData) {
+                  generatedImages.push({
+                    url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`,
+                    caption: item.caption,
+                    locationHint: item.locationHint,
+                    roleTitle: item.roleTitle
+                  });
+                  break;
+                }
+              }
             }
           } catch (genErr) {
             console.error("Individual image generation error:", genErr);
@@ -1069,49 +1073,56 @@ Make it look like a high-quality presentation slide for IT professionals. Use sl
 
 
     // 1. Generate Thumbnail
-    const thumbnailResponse = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite-image',
-      contents: thumbnailPrompt,
-      config: {
-        imageConfig: { aspectRatio: thumbnailRatio as any }
-      }
-    });
-
     let thumbnailUrl = '';
-    const thumbnailCandidates = thumbnailResponse.candidates?.[0]?.content?.parts;
-    if (thumbnailCandidates) {
-      for (const part of thumbnailCandidates) {
-        if (part.inlineData) {
-          thumbnailUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-          break;
+    try {
+      const thumbnailResponse = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite-image',
+        contents: thumbnailPrompt,
+        config: {
+          imageConfig: { aspectRatio: thumbnailRatio as any }
+        }
+      });
+      const thumbnailCandidates = thumbnailResponse.candidates?.[0]?.content?.parts;
+      if (thumbnailCandidates) {
+        for (const part of thumbnailCandidates) {
+          if (part.inlineData) {
+            thumbnailUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            break;
+          }
         }
       }
+    } catch (err) {
+      console.error("Thumbnail generation error:", err);
     }
 
     // 2. Generate Infographic Body Image
-    const infographicResponse = await ai.models.generateContent({
-      model: 'gemini-3.1-flash-lite-image',
-      contents: infographicPrompt,
-      config: {
-        imageConfig: { aspectRatio: infographicRatio as any }
-      }
-    });
-
     let infographicUrl = '';
-    const infographicCandidates = infographicResponse.candidates?.[0]?.content?.parts;
-    if (infographicCandidates) {
-      for (const part of infographicCandidates) {
-        if (part.inlineData) {
-          infographicUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-          break;
+    try {
+      const infographicResponse = await ai.models.generateContent({
+        model: 'gemini-3.1-flash-lite-image',
+        contents: infographicPrompt,
+        config: {
+          imageConfig: { aspectRatio: infographicRatio as any }
+        }
+      });
+      const infographicCandidates = infographicResponse.candidates?.[0]?.content?.parts;
+      if (infographicCandidates) {
+        for (const part of infographicCandidates) {
+          if (part.inlineData) {
+            infographicUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            break;
+          }
         }
       }
+    } catch (err) {
+      console.error("Infographic generation error:", err);
     }
 
     return { thumbnailUrl, infographicUrl };
   } catch (error) {
     console.error("Error generating images:", error);
-    throw new Error("Failed to generate images: " + (error instanceof Error ? error.message : JSON.stringify(error)));
+    const errorStr = error instanceof Error ? error.message : JSON.stringify(error);
+    
+    throw new Error("Failed to generate images: " + errorStr);
   }
 };
-

@@ -192,7 +192,7 @@ const App: React.FC = () => {
     try {
       setIsGeneratingImages(true);
       const { generateInfographics } = await import('./services/geminiService');
-      const { thumbnailUrl, infographicUrl, generatedImages } = await generateInfographics(blogData.titles.standard, blogData.content, platform, blogParams.contentType, blogParams.brand);
+      const { thumbnailUrl, infographicUrl, generatedImages } = await generateInfographics(blogData.titles.standard, blogData.content, platform, params.contentType, params.brand);
       
       setGeneratedData(prev => ({
         ...prev,

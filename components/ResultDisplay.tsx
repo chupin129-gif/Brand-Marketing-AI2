@@ -298,6 +298,8 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
                   { id: 'standard', label: (activePlatform === 'threads' || activePlatform === 'x') ? '핵심 요약형 훅' : '검색 노출 최적화 (Standard)', value: currentData.titles.standard || '제목 생성 오류' },
                   { id: 'emotional', label: (activePlatform === 'threads' || activePlatform === 'x') ? '공감/감성 유발형 훅' : '감성 자극형 (Emotional)', value: currentData.titles.emotional || '제목 생성 오류' },
                   { id: 'clickbait', label: (activePlatform === 'threads' || activePlatform === 'x') ? '도파민/호기심 훅' : '호기심 유발형 (Click-bait)', value: currentData.titles.clickbait || '제목 생성 오류' },
+                  ...(currentData.titles.trend ? [{ id: 'trend', label: '최신 트렌드 결합형 (Trend)', value: currentData.titles.trend }] : []),
+                  ...(currentData.titles.viral ? [{ id: 'viral', label: '커뮤니티 바이럴 최적화 (Viral)', value: currentData.titles.viral }] : []),
                 ].map((item) => (
                   <div key={item.id} className="p-5 hover:bg-slate-800/50 transition-colors flex justify-between items-start group gap-4 relative overflow-hidden">
                     <div className="flex-1 relative z-10">
@@ -465,7 +467,7 @@ export const ResultDisplay: React.FC<ResultDisplayProps> = ({
                   AI 썸네일 & 인포그래픽 자동 생성
                 </span>
                 <p className="text-xs text-slate-400 max-w-lg">
-                  생성된 원고의 제목과 본문 내용을 바탕으로 Gemini (Nano Banana) 이미지 엔진이 글에 완벽하게 어울리는 맞춤형 썸네일과 본문 첨부용 인포그래픽 이미지를 2장 생성합니다.
+                  생성된 원고의 제목과 본문 내용을 바탕으로 Gemini (Nano Banana) 이미지 엔진이 글에 완벽하게 어울리는 맞춤형 이미지를 생성합니다.
                 </p>
               </div>
               <button
